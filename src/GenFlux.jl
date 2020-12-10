@@ -3,9 +3,9 @@ module GenFlux
 using Gen
 using Flux
 
-const Model = Union{Chain, Dense, 
-                    Flux.Recur, Flux.RNNCell, Flux.LSTMCell, Flux.GRUCell, 
-                    Conv, ConvTranspose, DepthwiseConv, CrossCor, AdaptiveMaxPool, AdaptiveMeanPool, GlobalMaxPool, GlobalMeanPool, MaxPool, MeanPool}
+const FluxModel = Union{Chain, Dense, 
+                        Flux.Recur, Flux.RNNCell, Flux.LSTMCell, Flux.GRUCell, 
+                        Conv, ConvTranspose, DepthwiseConv, CrossCor, AdaptiveMaxPool, AdaptiveMeanPool, GlobalMaxPool, GlobalMeanPool, MaxPool, MeanPool}
 
 # ------------ Trace ------------ #
 
@@ -24,7 +24,7 @@ end
 # ------------ Generative function ------------ #
 
 struct FluxGenerativeFunction <: Gen.GenerativeFunction{Any, FluxTrace}
-    model::Model
+    model::FluxModel
     params
     FluxGenerativeFunction(model) = new(model, Flux.params(model))
 end
