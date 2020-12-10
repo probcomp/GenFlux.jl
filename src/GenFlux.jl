@@ -3,14 +3,16 @@ module GenFlux
 using Gen
 using Flux
 
-const Model = Union{Chain, Dense, RNN, LSTM, GRU, Conv}
+const Model = Union{Chain, Dense, 
+                    Flux.Recur, Flux.RNNCell, Flux.LSTMCell, Flux.GRUCell, 
+                    Conv, ConvTranspose, DepthwiseConv, CrossCor, AdaptiveMaxPool, AdaptiveMeanPool, GlobalMaxPool, GlobalMeanPool, MaxPool, MeanPool}
 
 # ------------ Trace ------------ #
 
-struct FluxTrace{R} <: Gen.Trace
+struct FluxTrace{A <: AbstractVector} <: Gen.Trace
     gen_fn::GenerativeFunction
     args::Tuple
-    retval::R
+    retval::A
 end
 
 @inline Gen.get_args(trace::FluxTrace) = trace.args
@@ -21,17 +23,16 @@ end
 
 # ------------ Generative function ------------ #
 
-struct FluxGenerativeFunction{R} <: Gen.GenerativeFunction{R, FluxTrace{R}}
+struct FluxGenerativeFunction <: Gen.GenerativeFunction{Any, FluxTrace}
     model::Model
     params
-    FluxGenerativeFunction{R}(model) = new{R}(model, device, Flux.params(model))
-    FluxGenerativeFunction(model) = new{Any}(model, device, Flux.params(model))
+    FluxGenerativeFunction(model) = new(model, Flux.params(model))
 end
 
 # ------------ GFI ------------ #
 
 function Gen.simulate(gen_fn::FluxGenerativeFunction, args::Tuple)
-    ret = gen_fn.model(args)
+    ret = gen_fn.model(args...)
     FluxTrace{typeof(ret)}(gen_fn, args, ret)
 end
 
@@ -63,5 +64,14 @@ function Gen.regenerate(trace::FluxTrace, args::Tuple, argdiffs::Tuple, ::Select
     trace = simulate(trace.gen_fn, args)
     (trace, 0., UnknownChange())
 end
+
+# ------------ Macro ------------ #
+
+_genflux(expr) = Expr(:call, GlobalRef(GenFlux, :FluxGenerativeFunction), expr)
+macro genflux(expr)
+    new = _genflux(expr)
+    esc(new)
+end
+export @genflux
 
 end # module
