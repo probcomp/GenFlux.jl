@@ -54,26 +54,25 @@ glorot_uniform64(rng::AbstractRNG, dims...) = (rand(rng, Float64, dims...) .- 0.
 glorot_uniform64(dims...) = glorot_uniform64(Random.GLOBAL_RNG, dims...)
 glorot_uniform64(rng::AbstractRNG) = (dims...) -> glorot_uniform64(rng, dims...)
 
-g = @genflux Chain(Conv((5, 5), 1 => 10, identity),
+g = @genflux Chain(Conv((5, 5), 1 => 10, identity; init = glorot_uniform64),
                    MaxPool((2, 2)),
                    x -> relu.(x),
-                   Conv((5, 5), 10 => 20, identity),
+                   Conv((5, 5), 10 => 20, identity; init = glorot_uniform64),
                    x -> relu.(x),
                    MaxPool((2, 2)),
                    x -> flatten(x),
                    Dense(320, 50; initW = glorot_uniform64),
-                   Dense(50, 10; initW = glorot_uniform64))
-
-softmax(xs) = exp.(xs .- logsumexp(xs))
+                   Dense(50, 10; initW = glorot_uniform64),
+                   softmax)
 
 @gen function f(xs::Vector{Float64})
     probs ~ g(xs)
-    [{:y => i} ~ categorical(softmax(p)) for (i, p) in enumerate(eachrow(probs))]
+    [{:y => i} ~ categorical(p) for (i, p) in enumerate(eachrow(probs))]
 end
 
 # ------------ Learning ------------ #
 
-update = ParamUpdate(Flux.ADAM(3e-3, (0.9, 0.999)), g)
+update = ParamUpdate(Flux.ADAM(3e-4, (0.9, 0.999)), g)
 for i=1:1500
     # Create trace from data
     (xs, ys) = next_batch(loader, 100)

@@ -49,7 +49,9 @@ Zygote.@adjoint function (g::FluxGenerativeFunction)(args...)
     ret, back
 end
 
-@inline accumulate!(g::FluxGenerativeFunction, scaler::Float64, v::Array) = g.params_grads .+= scaler * v
+@inline function accumulate!(g::FluxGenerativeFunction, scaler::Float64, v::Array)
+    g.params_grads = g.params_grads + scaler * v
+end
 
 @inline Gen.accepts_output_grad(g::FluxGenerativeFunction) = true
 @inline Gen.has_argument_grads(g::FluxGenerativeFunction) = (true, )
@@ -133,6 +135,7 @@ end
 
 function Gen.apply_update!(state::FluxOptimizerState)
     Flux.update!(state.opt, state.g.params, state.g.params_grads)
+    state.g.model = state.g.restructure(state.g.params)
     state.g.params_grads = Zygote.zero(state.g.params_grads)
 end
 
