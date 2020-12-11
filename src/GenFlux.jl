@@ -13,7 +13,7 @@ const FluxOptimizer = Union{Descent, Momentum, Nesterov, RMSProp, Flux.ADAM, RAD
 # ------------ Trace ------------ #
 
 # Possibly type for CuArrays.
-struct FluxTrace{A <: AbstractVector} <: Gen.Trace
+struct FluxTrace{A} <: Gen.Trace
     gen_fn::GenerativeFunction
     args::Tuple
     retval::A
@@ -125,7 +125,7 @@ function Gen.init_update_state(conf::FixedStepGradientDescent, g::FluxGenerative
 end
 
 function Gen.init_update_state(conf::Gen.ADAM, g::FluxGenerativeFunction, ::Any)
-    opt = Flux.ADAM(η = conf.learning_rate, β = (conf.beta1, conf.beta2))
+    opt = Flux.ADAM(conf.learning_rate, (conf.beta1, conf.beta2))
     FluxOptimizerState(opt, g)
 end
 
