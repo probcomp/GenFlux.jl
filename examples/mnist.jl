@@ -72,8 +72,8 @@ end
 
 # ------------ Learning ------------ #
 
-update = ParamUpdate(Flux.ADAM(5e-5, (0.9, 0.999)), g)
-for i = 1 : 1500
+update = ParamUpdate(Flux.ADAM(1e-4, (0.9, 0.999)), g)
+for i = 1 : 3500
     # Create trace from data
     (xs, ys) = next_batch(loader, 100)
     constraints = choicemap([(:y => i) => y for (i, y) in enumerate(ys)]...)
