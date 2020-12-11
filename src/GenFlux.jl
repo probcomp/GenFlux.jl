@@ -10,6 +10,7 @@ const FluxModel = Union{Chain, Dense,
 
 # ------------ Trace ------------ #
 
+# Possibly type for CuArrays.
 struct FluxTrace{A <: AbstractVector} <: Gen.Trace
     gen_fn::GenerativeFunction
     args::Tuple
@@ -26,13 +27,12 @@ end
 
 mutable struct FluxGenerativeFunction <: Gen.GenerativeFunction{Any, FluxTrace}
     model::FluxModel
-    params
-    params_grads
-    restructure
+    params::Vector
+    params_grads::Vector
+    restructure::Function # reset model after applying params_grads to params
     function FluxGenerativeFunction(model)
-        ps = Flux.params(model)
-        params_grads, re = Flux.destructure(model)
-        new(model, ps, Zygote.zero(params_grads), re)
+        ps, re = Flux.destructure(model)
+        new(model, ps, Zygote.zero(ps), re)
     end
 end
 
