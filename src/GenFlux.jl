@@ -2,6 +2,7 @@ module GenFlux
 
 using Gen
 using Flux
+using Zygote
 
 const FluxModel = Union{Chain, Dense, 
                         Flux.Recur, Flux.RNNCell, Flux.LSTMCell, Flux.GRUCell, 
@@ -23,11 +24,30 @@ end
 
 # ------------ Generative function ------------ #
 
-struct FluxGenerativeFunction <: Gen.GenerativeFunction{Any, FluxTrace}
+mutable struct FluxGenerativeFunction <: Gen.GenerativeFunction{Any, FluxTrace}
     model::FluxModel
     params
-    FluxGenerativeFunction(model) = new(model, Flux.params(model))
+    params_grads
+    restructure
+    function FluxGenerativeFunction(model)
+        ps = Flux.params(model)
+        params_grads, re = Flux.destructure(model)
+        new(model, ps, Zygote.zero(params_grads), re)
+    end
 end
+
+(g::FluxGenerativeFunction)(args...) = Gen.simulate(g, args)
+Zygote.@adjoint function (g::FluxGenerativeFunction)(args...)
+    ret = g(args...)
+    back = ret_grad -> begin
+        _, back = Zygote.pullback((m, x) -> m(x...), g.model, args)
+        params_grads, arg_grads = back(ret_grad)
+        (nothing, Flux.destructure(params_grads)[1], arg_grads...)
+    end
+    ret, back
+end
+
+@inline accumulate!(g::FluxGenerativeFunction, scaler::Float64, v::Array) = g.params_grads .+= scaler * v
 
 # ------------ GFI ------------ #
 
@@ -63,6 +83,27 @@ function Gen.regenerate(trace::FluxTrace, args::Tuple, argdiffs::Tuple, ::Select
     end
     trace = simulate(trace.gen_fn, args)
     (trace, 0., UnknownChange())
+end
+
+# ------------ Gradients ------------ #
+
+function backwards(trace::FluxTrace, retval_grad)
+    model, args = get_gen_fn(trace), get_args(trace)
+    ret, back = Zygote.pullback(model, args...)
+    ps_grads, arg_grads = back(retval_grad)
+    ps_grads, arg_grads
+end
+
+function Gen.choice_gradients(trace::FluxTrace, ::Selection, retval_grad)
+    _, arg_grads = backwards(trace, retval_grad)
+    (arg_grads, ), EmptyChoiceMap(), EmptyChoiceMap()
+end
+
+function Gen.accumulate_param_gradients!(trace::FluxTrace, retval_grad, multiplier = 1.0)
+    params_grads, arg_grads = backwards(trace, retval_grad)
+    g = get_gen_fn(trace)
+    accumulate!(g, multiplier, params_grads)
+    (arg_grads, )
 end
 
 # ------------ Macro ------------ #
