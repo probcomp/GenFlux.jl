@@ -4,6 +4,8 @@ using Gen
 using Flux
 using Zygote
 
+import Base: accumulate!
+
 const FluxModel = Union{Chain, Dense, 
                         Flux.Recur, Flux.RNNCell, Flux.LSTMCell, Flux.GRUCell, 
                         Conv, ConvTranspose, DepthwiseConv, CrossCor, AdaptiveMaxPool, AdaptiveMeanPool, GlobalMaxPool, GlobalMeanPool, MaxPool, MeanPool}
@@ -49,8 +51,8 @@ Zygote.@adjoint function (g::FluxGenerativeFunction)(args...)
     ret, back
 end
 
-@inline function accumulate!(g::FluxGenerativeFunction, scaler::Float64, v::Array)
-    g.params_grads = g.params_grads + scaler * v
+@inline function accumulate!(g::FluxGenerativeFunction, multiplier::Float64, v::Array)
+    g.params_grads = g.params_grads + multiplier * v
 end
 
 @inline Gen.accepts_output_grad(g::FluxGenerativeFunction) = true
@@ -110,7 +112,7 @@ end
 function Gen.accumulate_param_gradients!(trace::FluxTrace, retval_grad, multiplier = 1.0)
     params_grads, arg_grads = backwards(trace, retval_grad)
     g = get_gen_fn(trace)
-    accumulate!(g, multiplier, params_grads)
+    accumulate!(g, -1 * multiplier, params_grads)
     (arg_grads, )
 end
 

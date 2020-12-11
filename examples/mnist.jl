@@ -13,7 +13,7 @@ mutable struct DataLoader
     order::Vector{Int}
 end
 
-DataLoader() = DataLoader(1, Random.shuffle(1:60000))
+DataLoader() = DataLoader(1, Random.shuffle(1 : 60000))
 
 function next_batch(loader::DataLoader, batch_size)
     x = zeros(Float64, 28, 28, 1, batch_size)
@@ -31,7 +31,7 @@ function load_test_set()
     N = length(test_y)
     x = zeros(Float64, 28, 28, 1, N)
     y = Vector{Int}(undef, N)
-    for i=1:N
+    for i = 1 : N
         x[:, :, 1, i] = test_x[:, :, i]
         y[i] = test_y[i] + 1
     end
@@ -54,10 +54,10 @@ glorot_uniform64(rng::AbstractRNG, dims...) = (rand(rng, Float64, dims...) .- 0.
 glorot_uniform64(dims...) = glorot_uniform64(Random.GLOBAL_RNG, dims...)
 glorot_uniform64(rng::AbstractRNG) = (dims...) -> glorot_uniform64(rng, dims...)
 
-g = @genflux Chain(Conv((5, 5), 1 => 10, identity; init = glorot_uniform64),
+g = @genflux Chain(Conv((5, 5), 1 => 10; init = glorot_uniform64),
                    MaxPool((2, 2)),
                    x -> relu.(x),
-                   Conv((5, 5), 10 => 20, identity; init = glorot_uniform64),
+                   Conv((5, 5), 10 => 20; init = glorot_uniform64),
                    x -> relu.(x),
                    MaxPool((2, 2)),
                    x -> flatten(x),
@@ -67,13 +67,13 @@ g = @genflux Chain(Conv((5, 5), 1 => 10, identity; init = glorot_uniform64),
 
 @gen function f(xs::Vector{Float64})
     probs ~ g(xs)
-    [{:y => i} ~ categorical(p) for (i, p) in enumerate(eachrow(probs))]
+    [{:y => i} ~ categorical(p |> collect) for (i, p) in enumerate(eachcol(probs))]
 end
 
 # ------------ Learning ------------ #
 
-update = ParamUpdate(Flux.ADAM(3e-4, (0.9, 0.999)), g)
-for i=1:1500
+update = ParamUpdate(Flux.ADAM(5e-5, (0.9, 0.999)), g)
+for i = 1 : 1500
     # Create trace from data
     (xs, ys) = next_batch(loader, 100)
     constraints = choicemap([(:y => i) => y for (i, y) in enumerate(ys)]...)
