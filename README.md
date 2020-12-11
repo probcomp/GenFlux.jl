@@ -4,6 +4,8 @@
 
 ---
 
+([full example available here](https://github.com/femtomc/GenFlux.jl/blob/master/examples/mnist.jl))
+
 ```julia
 g = @genflux Chain(Conv((5, 5), 1 => 10; init = glorot_uniform64),
                    MaxPool((2, 2)),
