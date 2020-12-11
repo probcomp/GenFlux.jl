@@ -116,25 +116,24 @@ end
 
 struct FluxOptimizerState
     opt
-    params
-    params_grads
+    g
 end
 
 function Gen.init_update_state(conf::FixedStepGradientDescent, g::FluxGenerativeFunction, ::Any)
     opt = Flux.SGD(η = conf.learning_rate)
-    FluxOptimizerState(opt, g.params, g.params_grads)
+    FluxOptimizerState(opt, g)
 end
 
 function Gen.init_update_state(conf::Gen.ADAM, g::FluxGenerativeFunction, ::Any)
     opt = Flux.ADAM(η = conf.learning_rate, β = (conf.beta1, conf.beta2))
-    FluxOptimizerState(opt, g.params, g.params_grads)
+    FluxOptimizerState(opt, g)
 end
 
-@inline Gen.init_update_state(opt::O, g::FluxGenerativeFunction, ::Any) where O <: FluxOptimizer = FluxOptimizerState(opt, g.params, g.params_grads)
+@inline Gen.init_update_state(opt::O, g::FluxGenerativeFunction, ::Any) where O <: FluxOptimizer = FluxOptimizerState(opt, g)
 
 function Gen.apply_update!(state::FluxOptimizerState)
-    Flux.update!(state.opt, state.params, state.params_grads)
-    state.params_grads = Zygote.zero(state.params_grads)
+    Flux.update!(state.opt, state.g.params, state.g.params_grads)
+    state.g.params_grads = Zygote.zero(state.g.params_grads)
 end
 
 # ------------ Macro ------------ #
