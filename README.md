@@ -1,6 +1,6 @@
 # GenFlux.jl
 
-`GenFlux.jl` is Gen DSL which extends [the generative function interface](https://www.gen.dev/dev/ref/gfi/#Generative-function-interface-1) to allow the usage of Flux models as Gen generative functions.
+`GenFlux.jl` is Gen DSL which extends [the generative function interface](https://www.gen.dev/dev/ref/gfi/#Generative-function-interface-1) to allow the usage of [Flux.jl models](https://github.com/FluxML/Flux.jl) as Gen generative functions.
 
 ---
 
