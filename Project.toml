@@ -9,13 +9,18 @@ Gen = "ea4f424c-a589-11e8-07c0-fd5c91b9da4a"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-julia = "1"
+Flux = "0.13"
 Gen = "0.4.4"
 Zygote = "0.6"
-Flux = "0.13"
+julia = "1"
 
 [extras]
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Test"]
+test = ["Test", "Random", "Distributions", "MLDatasets", "Statistics", "Zygote"]

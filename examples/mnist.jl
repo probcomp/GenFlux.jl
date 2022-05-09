@@ -1,3 +1,5 @@
+# EXCLUDE FROM TESTING
+
 module MNIST
 
 # ------------ load mnist ------------ #
@@ -6,7 +8,7 @@ import Random
 Random.seed!(1)
 
 import MLDatasets
-train_x, train_y = MLDatasets.MNIST.traindata()
+train_x, train_y = MLDatasets.MNIST(split=:train)[:]
 
 mutable struct DataLoader
     cur_id::Int

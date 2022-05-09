@@ -6,14 +6,6 @@ using Zygote
 
 import Base: accumulate!
 
-const FluxModel = Union{Chain, Dense, 
-                        Flux.Recur, Flux.RNNCell, Flux.LSTMCell, Flux.GRUCell, 
-                        Conv, ConvTranspose, DepthwiseConv, CrossCor, AdaptiveMaxPool, AdaptiveMeanPool, GlobalMaxPool, GlobalMeanPool, MaxPool, MeanPool}
-
-const FluxOptimizer = Union{Descent, Momentum, Nesterov, RMSProp, Flux.ADAM, RADAM, AdaMax, OADAM, ADAGrad, ADADelta, AMSGrad, NADAM, AdaBelief, Flux.Optimiser}
-
-# ------------ Trace ------------ #
-
 # Possibly type for CuArrays.
 struct FluxTrace{A} <: Gen.Trace
     gen_fn::GenerativeFunction
@@ -29,18 +21,21 @@ end
 
 # ------------ Generative function ------------ #
 
-mutable struct FluxGenerativeFunction <: Gen.GenerativeFunction{Any, FluxTrace}
-    model::FluxModel
+mutable struct FluxGenerativeFunction{FM} <: Gen.GenerativeFunction{Any, FluxTrace}
+    model::FM
     params::Vector
     params_grads::Vector
-    restructure::Function # reset model after applying params_grads to params
-    function FluxGenerativeFunction(model)
+    restructure::Any # reset model after applying params_grads to params
+    function FluxGenerativeFunction(model::FM) where FM
         ps, re = Flux.destructure(model)
-        new(model, ps, Zygote.zero(ps), re)
+        new{FM}(model, ps, Zygote.zero(ps), re)
     end
 end
 
-@inline (g::FluxGenerativeFunction)(args...) = Gen.get_retval(Gen.simulate(g, args))
+function (g::FluxGenerativeFunction)(args...)
+    return Gen.get_retval(Gen.simulate(g, args))
+end
+
 Zygote.@adjoint function (g::FluxGenerativeFunction)(args...)
     ret = g(args...)
     back = ret_grad -> begin
@@ -51,7 +46,7 @@ Zygote.@adjoint function (g::FluxGenerativeFunction)(args...)
     ret, back
 end
 
-@inline function accumulate!(g::FluxGenerativeFunction, multiplier::Float64, v::Array)
+function accumulate!(g::FluxGenerativeFunction, multiplier::Float64, v::Array)
     g.params_grads = g.params_grads + multiplier * v
 end
 
@@ -133,7 +128,7 @@ function Gen.init_update_state(conf::Gen.ADAM, g::FluxGenerativeFunction, ::Any)
     FluxOptimizerState(opt, g)
 end
 
-@inline Gen.init_update_state(opt::O, g::FluxGenerativeFunction, ::Any) where O <: FluxOptimizer = FluxOptimizerState(opt, g)
+@inline Gen.init_update_state(opt::O, g::FluxGenerativeFunction, ::Any) where O = FluxOptimizerState(opt, g)
 
 function Gen.apply_update!(state::FluxOptimizerState)
     Flux.update!(state.opt, state.g.params, state.g.params_grads)
