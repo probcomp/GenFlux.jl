@@ -3,7 +3,7 @@
 ![Build Status](https://github.com/probcomp/GenFlux.jl/actions/workflows/CI.yml/badge.svg)
 [![Link to Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://probcomp.github.io/GenFlux.jl/dev)
 
-`GenFlux.jl` is Gen DSL which extends [the generative function interface](https://www.gen.dev/dev/ref/gfi/#Generative-function-interface-1) to allow the usage of [Flux.jl models](https://github.com/FluxML/Flux.jl) as Gen generative functions.
+`GenFlux.jl` is Gen DSL which implements [the generative function interface](https://www.gen.dev/dev/ref/gfi/#Generative-function-interface-1) to allow the usage of [Flux.jl models](https://github.com/FluxML/Flux.jl) as Gen generative functions.
 
 ---
 
