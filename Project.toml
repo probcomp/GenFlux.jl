@@ -10,6 +10,6 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 julia = "1"
-Gen = "0.3.5"
-Zygote = "0.5"
-Flux = "0.11"
+Gen = "0.4.4"
+Zygote = "0.6"
+Flux = "0.13"
